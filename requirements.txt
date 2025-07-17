@@ -1,0 +1,7 @@
+langchain
+openai
+faiss-cpu
+langchain-openai
+langchain-huggingface
+sentence-transformers
+
