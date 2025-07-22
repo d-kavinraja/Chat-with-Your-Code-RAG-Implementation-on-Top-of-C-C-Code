@@ -4,6 +4,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.llms import Ollama
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+import streamlit.components.v1 as components
 import re
 import pyttsx3
 import tempfile
@@ -55,6 +56,7 @@ with st.sidebar:
     st.divider()
     st.write("Model: tinyllama via Ollama")
     st.write("Vector DB: Chroma (./chroma)")
+    st.write("Flowchart: Mermaid diagram")
 
 # Load RAG chain
 @st.cache_resource
@@ -122,10 +124,38 @@ if query:
           for i, doc in enumerate(docs):
               st.markdown(f"**Chunk {i+1}-{doc.metadata.get('file')}**")
               st.code(doc.page_content, language="c")
-
+              
         # Add to query log
         st.session_state.query_log.append((query, answer))
-        
+# Mermaid diagram logic (static mapping for now)
+function_call_map = {
+    "lprintAddPrinter": ["lprintIsPrinterInUse", "lprintLog", "lprintSavePrinters"],
+    "lprintDeletePrinter": ["lprintLog", "lprintSavePrinters"],
+    "lprintGetPrinter": [],
+}
+
+# Show Mermaid diagram if query matches a function
+for func in function_call_map:
+    if func in query:
+        callees = function_call_map[func]
+        st.markdown("### Function Call Diagram (Mermaid)")
+
+        diagram = f"graph TD\n    {func}"
+        for callee in callees:
+            diagram += f" --> {callee}"
+
+        components.html(f"""
+        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+        <div class="mermaid">
+        {diagram}
+        </div>
+        <script>
+            mermaid.initialize({{ startOnLoad: true }});
+        </script>
+        """, height=400)
+
+        break  # Stop checking after the first match
+   
 
 # Query log viewer
 with st.expander("Query Log"):
