@@ -1,0 +1,6 @@
+graph TD
+    main["int main()"]
+
+    classDef functionClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef structClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    class main functionClass;
