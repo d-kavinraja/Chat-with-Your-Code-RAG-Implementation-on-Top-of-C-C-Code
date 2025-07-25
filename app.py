@@ -381,7 +381,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 # Load custom CSS
 load_custom_css()
 
