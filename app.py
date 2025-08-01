@@ -72,36 +72,17 @@ def extract_function_names(chunks):
 def load_rag_components():
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
     vectordb = Chroma(persist_directory="./chroma", embedding_function=embeddings)
-    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 6})
+    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 3})
     prompt_template = """
-You are CodeSense, an expert C/C++ code assistant. Your job is to answer questions using the provided code snippets.
+    You are a helpful assistant specialized in C/C++ source code. Use the following retrieved code snippets to answer the user query as accurately as possible.
 
-Each snippet may contain parts of functions, comments, or logic blocks. Use all available information to:
-- Understand the purpose of functions and variables
-- Trace the flow of logic or function calls
-- Explain memory handling, I/O, and other system-level behavior
-
-IMPORTANT:
-- Be accurate and concise
-- If something is unclear or not present in the snippets, say "Not enough information"
-- Use the function or variable names as they appear
-
-Code Snippets:
-=====================
-{context}
-=====================
-
-User Question: {question}
-
-Detailed Answer:"""
+    ---------------------
+    {context}
+    ---------------------
+    Question: {question}
+    Answer:"""
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-    llm = Ollama(
-    model="tinyllama",
-    temperature=0.5,     # Lower = more deterministic
-    top_p=0.5,          # Controls diversity
-    repeat_penalty=1.1,  # Optional: discourage repetition
-        )
-
+    llm = Ollama(model="tinyllama")
     return llm, retriever, prompt, vectordb
 
 llm, retriever, prompt, vectordb = load_rag_components()
