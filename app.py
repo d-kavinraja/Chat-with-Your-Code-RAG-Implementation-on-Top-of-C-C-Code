@@ -72,17 +72,36 @@ def extract_function_names(chunks):
 def load_rag_components():
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
     vectordb = Chroma(persist_directory="./chroma", embedding_function=embeddings)
-    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+    retriever = vectordb.as_retriever(search_type="mmr",search_kwargs={"k": 6, "fetch_k": 20})
     prompt_template = """
-    You are a helpful assistant specialized in C/C++ source code. Use the following retrieved code snippets to answer the user query as accurately as possible.
+You are CodeSense, a precise and concise C/C++ code assistant.
 
-    ---------------------
-    {context}
-    ---------------------
-    Question: {question}
-    Answer:"""
+You will receive code snippets from a larger codebase. Use only this information to answer the user’s question.
+
+⚠️ Rules:
+- Do not guess or hallucinate. If information is missing, say: "Not enough information."
+- Use exact function/variable names as shown in code.
+- Avoid repeating explanations or phrases.
+- Be concise but clear.
+
+================ Code Snippets ================
+{context}
+==============================================
+
+Question:
+{question}
+
+Answer:
+"""
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-    llm = Ollama(model="tinyllama")
+
+    llm = Ollama(
+    model="tinyllama",
+    temperature=0.5,     # Lower = more deterministic
+    top_p=0.5,          # Controls diversity
+    repeat_penalty=1.3,  # Optional: discourage repetition
+        )
+
     return llm, retriever, prompt, vectordb
 
 llm, retriever, prompt, vectordb = load_rag_components()
@@ -146,6 +165,8 @@ if query:
         generation_start = time.time()
         answer = llm.invoke(formatted_prompt)
         generation_end = time.time()
+        if any(doc.page_content in answer for doc in docs):
+          st.warning("⚠️ The LLM is repeating code chunks directly. Try reducing 'k' or using MMR for better diversity.")
 
         full_end = time.time()
 
